@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hirely — Company‑Specific Resume Critiques</title>
+  <meta name="description" content="Paste your resume, pick a company, and get recruiter‑grade feedback in seconds. Built for students and early‑career engineers." />
+  
+  <!-- Open Graph / Social -->
+  <meta property="og:title" content="Hirely — Company‑Specific Resume Critiques" />
+  <meta property="og:description" content="Get recruiter‑grade feedback tailored to Google, Meta, Amazon, Microsoft, and more." />
+  <meta property="og:type" content="website" />
+  
+  <!-- Preload fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Apple-inspired base styles */
+    body { 
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+    
+    /* Loading animation */
+    #page-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease-out;
+    }
+    
+    #page-loader.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .loader-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #f1f5f9;
+      border-top: 4px solid #0f172a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .container { max-width: 1120px; }
+    .shadow-soft { box-shadow: 0 10px 30px rgba(0,0,0,.06); }
+    .shadow-soft-hover { box-shadow: 0 10px 40px rgba(0,0,0,.08); }
+    
+    /* Subtle animated background */
+    .animated-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    
+    .bg-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      animation: float 20s infinite ease-in-out;
+    }
+    
+    .bg-orb-1 {
+      width: 600px;
+      height: 600px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      top: -200px;
+      left: -200px;
+      animation-delay: 0s;
+    }
+    
+    .bg-orb-2 {
+      width: 500px;
+      height: 500px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      bottom: -150px;
+      right: -150px;
+      animation-delay: 5s;
+    }
+    
+    .bg-orb-3 {
+      width: 400px;
+      height: 400px;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation-delay: 10s;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -30px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.9); }
+    }
+    
+    /* Apple-style typography - larger, bolder */
+    h1 {
+      font-size: clamp(2.5rem, 5vw, 4.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    
+    h2 {
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      line-height: 1.15;
+    }
+    
+    /* Gradient text on hero heading */
+    .gradient-text {
+      background: linear-gradient(135deg, #0f172a 0%, #334155 50%, #475569 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-size: 200% auto;
+      animation: gradient-shift 3s ease infinite;
+    }
+    
+    @keyframes gradient-shift {
+      0%, 100% { background-position: 0% center; }
+      50% { background-position: 100% center; }
+    }
+    
+    /* Text reveal animations */
+    .text-reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    .text-reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Section dividers */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.5), transparent);
+      margin: 0 auto;
+      max-width: 1200px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .section-divider::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.8), transparent);
+      animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    
+    /* Apple-style section spacing */
+    .section-padding {
+      padding-top: 5rem;
+      padding-bottom: 5rem;
+    }
+    
+    @media (min-width: 768px) {
+      .section-padding {
+        padding-top: 8rem;
+        padding-bottom: 8rem;
+      }
+    }
+    
+    /* Scroll-triggered animations (Apple style) */
+    .scroll-animate {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    .scroll-animate.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .scroll-animate-delay-1 { transition-delay: 0.1s; }
+    .scroll-animate-delay-2 { transition-delay: 0.2s; }
+    .scroll-animate-delay-3 { transition-delay: 0.3s; }
+    
+    /* Smooth fade-in for hero */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .animate-fade-in {
+      animation: fadeInUp 0.8s ease-out forwards;
+    }
+    .animate-delay-1 { animation-delay: 0.2s; opacity: 0; }
+    .animate-delay-2 { animation-delay: 0.4s; opacity: 0; }
+    
+    /* Smooth transitions */
+    * { transition-property: color, background-color, border-color, opacity, transform, box-shadow; }
+    
+    /* Mobile menu */
+    .mobile-menu {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    .mobile-menu.open {
+      max-height: 500px;
+    }
+    
+    /* Focus improvements */
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid #0f172a;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    
+    /* Navbar scroll effects */
+    header {
+      transition: all 0.3s ease;
+    }
+    
+    header.scrolled {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    /* Glassmorphism preview card */
+    .preview-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1),
+                  0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .preview-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      transition: left 0.5s;
+    }
+    
+    .preview-card:hover::before {
+      left: 100%;
+    }
+    
+    .preview-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15),
+                  0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+    }
+    
+    /* Enhanced card designs with 3D tilt */
+    .enhanced-card {
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      transform-style: preserve-3d;
+      perspective: 1000px;
+    }
+    
+    .enhanced-card:hover {
+      transform: translateY(-8px) rotateX(2deg);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12),
+                  0 0 0 1px rgba(148, 163, 184, 0.1) inset;
+    }
+    
+    /* Fix FAQ details - prevent transform on summary */
+    details.enhanced-card summary {
+      transform: none !important;
+      transform-style: flat;
+    }
+    
+    details.enhanced-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    details.enhanced-card summary span {
+      display: inline-block;
+      transform-origin: center;
+    }
+    
+    /* Button enhancements with ripple effect */
+    .btn-primary {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    
+    .btn-primary:active::before {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .btn-primary:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.3);
+    }
+    
+    .btn-secondary {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-secondary::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .btn-secondary:hover::after {
+      left: 100%;
+    }
+    
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Enhanced hover states everywhere */
+    a:not(.btn-primary):not(.btn-secondary):hover {
+      transform: translateY(-1px);
+    }
+    
+    /* Premium card styling */
+    .premium-card {
+      backdrop-filter: blur(10px);
+    }
+    
+    /* Logo styling - bright and pop with consistent sizing */
+    .logo-brand {
+      filter: brightness(1.1) contrast(1.1);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+    
+    .logo-brand-small {
+      width: 80px;
+      height: 32px;
+    }
+    
+    .logo-brand-large {
+      width: 120px;
+      height: 48px;
+    }
+    
+    @media (min-width: 768px) {
+      .logo-brand-small {
+        width: 100px;
+        height: 40px;
+      }
+      
+      .logo-brand-large {
+        width: 140px;
+        height: 56px;
+      }
+    }
+    
+    .logo-brand:hover {
+      transform: scale(1.15);
+      filter: brightness(1.3) contrast(1.2) drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+    }
+    
+    /* Number animation */
+    .number-counter {
+      font-variant-numeric: tabular-nums;
+    }
+    
+    /* Parallax container */
+    .parallax-container {
+      transform-style: preserve-3d;
+    }
+    
+    /* Color accents */
+    .accent-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .accent-bg {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    }
+  </style>
+</head>
+<body class="bg-white text-slate-800">
+  <!-- Loading animation -->
+  <div id="page-loader">
+    <div class="loader-spinner"></div>
+  </div>
+  
+  <!-- Animated background -->
+  <div class="animated-bg">
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+  </div>
+  
+  <!-- NAVBAR (GPTZero style - clean, minimal) -->
+  <header id="main-header" class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200" role="banner">
+    <div class="container mx-auto px-4 h-16 flex items-center justify-between">
+      <a href="#" class="flex items-center gap-2 focus:outline-none transition-transform hover:scale-105" aria-label="Hirely home">
+        <span class="inline-grid place-items-center w-9 h-9 rounded-lg bg-slate-900 text-white text-sm font-black transition-all hover:bg-slate-800">HY</span>
+        <span class="font-semibold tracking-tight text-lg">Hirely</span>
+      </a>
+      
+      <!-- Desktop Nav -->
+      <nav class="hidden md:flex items-center gap-8 text-sm" role="navigation" aria-label="Main navigation">
+        <a href="#how" class="hover:text-slate-900 text-slate-700 transition-all relative group">
+          How it works
+          <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-slate-900 transition-all group-hover:w-full"></span>
+        </a>
+        <a href="#features" class="hover:text-slate-900 text-slate-700 transition-all relative group">
+          Features
+          <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-slate-900 transition-all group-hover:w-full"></span>
+        </a>
+        <a href="#trusted" class="hover:text-slate-900 text-slate-700 transition-all relative group">
+          Trusted by
+          <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-slate-900 transition-all group-hover:w-full"></span>
+        </a>
+        <a href="#faq" class="hover:text-slate-900 text-slate-700 transition-all relative group">
+          FAQ
+          <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-slate-900 transition-all group-hover:w-full"></span>
+        </a>
+      </nav>
+      
+      <div class="flex items-center gap-3">
+        <a class="hidden sm:inline-block px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm transition-all btn-secondary" href="#waitlist">Join waitlist</a>
+        <a class="inline-block px-4 py-2 rounded-lg text-white font-semibold text-sm transition-all btn-primary" href="indexdropbox.html">Try prototype</a>
+        
+        <!-- Mobile menu button -->
+        <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors" aria-label="Toggle menu" aria-expanded="false">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path id="menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Mobile menu -->
+    <nav id="mobile-menu" class="mobile-menu md:hidden border-t border-slate-200 bg-white" role="navigation" aria-label="Mobile navigation">
+      <div class="container mx-auto px-4 py-4 flex flex-col gap-4">
+        <a href="#how" class="py-2 text-slate-700 hover:text-slate-900 transition-colors">How it works</a>
+        <a href="#features" class="py-2 text-slate-700 hover:text-slate-900 transition-colors">Features</a>
+        <a href="#trusted" class="py-2 text-slate-700 hover:text-slate-900 transition-colors">Trusted by</a>
+        <a href="#faq" class="py-2 text-slate-700 hover:text-slate-900 transition-colors">FAQ</a>
+        <a href="#waitlist" class="py-2 text-slate-700 hover:text-slate-900 transition-colors">Join waitlist</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- HERO (Apple-style - bold, dramatic) -->
+  <section class="bg-white section-padding relative">
+    <div class="container mx-auto px-4 md:px-8">
+      <div class="max-w-6xl mx-auto">
+        <!-- Text content - centered, Apple style -->
+        <div class="text-center mb-16 md:mb-24 animate-fade-in">
+          <p class="text-xs font-semibold tracking-widest text-slate-500 uppercase mb-6 text-reveal">AI career tool</p>
+          <h1 class="text-5xl md:text-7xl font-bold leading-none mb-6 text-reveal gradient-text">
+            Company‑specific resume critiques
+          </h1>
+          <h2 class="text-4xl md:text-6xl font-semibold text-slate-600 mb-8 text-reveal">
+            that get you interviews
+          </h2>
+          <p class="text-xl md:text-2xl text-slate-700 max-w-3xl mx-auto mb-12 leading-relaxed text-reveal">
+            Upload or paste your resume, pick Google/Meta/Amazon/Microsoft/NVIDIA, and get a fit score, missing keywords, quantified bullet rewrites, and ATS tips — in seconds.
+          </p>
+          <div class="flex flex-wrap gap-4 justify-center mb-12">
+            <a href="indexdropbox.html" class="px-8 py-4 rounded-full text-white font-semibold text-lg transition-all btn-primary">
+              Try the prototype
+            </a>
+            <a href="#how" class="px-8 py-4 rounded-full border-2 border-slate-300 text-slate-700 font-semibold text-lg transition-all btn-secondary">
+              See how it works
+            </a>
+          </div>
+          <div class="flex items-center justify-center gap-10 flex-wrap">
+           <img src="images/Meta-Logo.png" alt="Meta" class="logo-brand logo-brand-small" />
+           <img src="images/Amazon_logo.svg.webp" alt="Amazon" class="logo-brand logo-brand-small" />
+           <img src="images/pngimg.com - microsoft_PNG13.png" alt="Microsoft" class="logo-brand logo-brand-small" />
+           <img src="images/NVIDIA_logo.png" alt="NVIDIA" class="logo-brand logo-brand-small" />
+
+          </div>
+        </div>
+        
+        <!-- Preview card - larger, more dramatic with parallax -->
+        <div class="max-w-4xl mx-auto animate-fade-in animate-delay-1 parallax-container" id="preview-card-container">
+          <div class="rounded-2xl border border-slate-200 shadow-soft p-8 bg-white premium-card preview-card">
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-base font-semibold">Critique Summary</div>
+              <span class="text-xs text-slate-500">Preview</span>
+            </div>
+            <div class="grid gap-4">
+              <div class="rounded-lg border border-slate-200 p-5 bg-gradient-to-br from-slate-50 to-white">
+                <div class="text-xs text-slate-500 mb-1">Fit score</div>
+                <div class="text-4xl font-extrabold text-slate-900 number-counter" id="fit-score">0/100</div>
+              </div>
+              <div class="rounded-lg border border-slate-200 p-5">
+                <div class="text-xs text-slate-500 mb-2">Keyword gaps</div>
+                <div class="flex flex-wrap gap-2 text-sm">
+                  <span class="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 font-medium transition-all hover:bg-slate-200 hover:scale-105">gRPC</span>
+                  <span class="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 font-medium transition-all hover:bg-slate-200 hover:scale-105">BigQuery</span>
+                  <span class="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 font-medium transition-all hover:bg-slate-200 hover:scale-105">Kubernetes</span>
+                </div>
+              </div>
+              <div class="rounded-lg border border-slate-200 p-5">
+                <div class="text-xs text-slate-500 mb-2">Rewritten bullet</div>
+                <p class="text-sm leading-relaxed">Designed and shipped 4 gRPC microservices handling ~9M req/day (p99 190ms) on GKE; cut storage cost ~15% via BigQuery partitioning.</p>
+              </div>
+              <div class="rounded-lg border border-slate-200 p-5 flex items-center justify-between">
+                <div>
+                  <div class="text-xs text-slate-500 mb-1">ATS check</div>
+                  <div class="text-sm">Two‑column layout may break parsers</div>
+                </div>
+                <button class="text-sm px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 transition-all font-medium hover:scale-105">Fix tips</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section Divider -->
+  <div class="section-divider"></div>
+
+  <!-- TRUST -->
+  <section id="trusted" class="bg-slate-50 border-y border-slate-200 py-12 md:py-16 relative">
+    <div class="container mx-auto px-4">
+      <p class="text-center text-xs font-semibold tracking-widest text-slate-500 uppercase mb-6">Seen at clubs & bootcamps</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-12 items-center justify-items-center scroll-animate max-w-4xl mx-auto">
+        <img src="images/Meta-Logo.png" alt="Meta" class="logo-brand logo-brand-large mx-auto" />
+        <img src="images/Amazon_logo.svg.webp" alt="Amazon" class="logo-brand logo-brand-large mx-auto" />
+        <img src="images/pngimg.com - microsoft_PNG13.png" alt="Microsoft" class="logo-brand logo-brand-large mx-auto" />
+        <img src="images/NVIDIA_logo.png" alt="NVIDIA" class="logo-brand logo-brand-large mx-auto" />
+    </div>
+  </section>
+
+  <!-- Section Divider -->
+  <div class="section-divider"></div>
+
+  <!-- HOW IT WORKS (Apple-style section) -->
+  <section id="how" class="bg-white section-padding">
+    <div class="container mx-auto px-4">
+      <h2 class="text-center text-4xl md:text-6xl font-bold text-slate-900 mb-4 scroll-animate">How it works</h2>
+      <p class="text-center text-xl text-slate-600 max-w-2xl mx-auto mb-16 scroll-animate scroll-animate-delay-1">Three simple steps to get recruiter-grade feedback</p>
+      <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div class="rounded-2xl border border-slate-200 p-8 hover:shadow-soft transition-all scroll-animate scroll-animate-delay-1 enhanced-card">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl mb-6 transition-all hover:scale-110">1</div>
+          <h3 class="font-bold text-2xl mb-3">Paste or upload your resume</h3>
+          <p class="text-slate-600 text-lg leading-relaxed">Start with paste‑only for speed and privacy. Add PDF/DOCX support later.</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 p-8 hover:shadow-soft transition-all scroll-animate scroll-animate-delay-2 enhanced-card">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xl mb-6 transition-all hover:scale-110">2</div>
+          <h3 class="font-bold text-2xl mb-3">Pick the company</h3>
+          <p class="text-slate-600 text-lg leading-relaxed">We apply a Company Playbook: signals, style, and role‑specific keywords.</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 p-8 hover:shadow-soft transition-all scroll-animate scroll-animate-delay-3 enhanced-card">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-xl mb-6 transition-all hover:scale-110">3</div>
+          <h3 class="font-bold text-2xl mb-3">Get recruiter‑grade feedback</h3>
+          <p class="text-slate-600 text-lg leading-relaxed">Fit score, missing signals, quantified rewrites, and ATS tips in seconds.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section Divider -->
+  <div class="section-divider"></div>
+
+  <!-- FEATURES (Apple-style section) -->
+  <section id="features" class="bg-slate-50 border-t border-slate-200 section-padding">
+    <div class="container mx-auto px-4">
+      <h2 class="text-center text-4xl md:text-6xl font-bold text-slate-900 mb-4 scroll-animate">Why candidates choose <span class="accent-gradient">Hirely</span></h2>
+      <p class="text-center text-xl text-slate-600 max-w-2xl mx-auto mb-16 scroll-animate scroll-animate-delay-1">Premium feedback that makes a difference</p>
+      <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div class="rounded-2xl border border-slate-200 p-8 bg-white hover:shadow-soft transition-all scroll-animate scroll-animate-delay-1 enhanced-card">
+          <h3 class="font-bold text-2xl mb-3">Company‑specific guidance</h3>
+          <p class="text-slate-600 text-lg leading-relaxed">Every employer has different signals. Our playbooks tailor advice to each one.</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 p-8 bg-white hover:shadow-soft transition-all scroll-animate scroll-animate-delay-2 enhanced-card">
+          <h3 class="font-bold text-2xl mb-3">Quantified rewrites</h3>
+          <p class="text-slate-600 text-lg leading-relaxed">We push for concrete outcomes: %, ms, p95/p99, req/day, $ saved.</p>
+        </div>
+        <div class="rounded-2xl border border-slate-200 p-8 bg-white hover:shadow-soft transition-all scroll-animate scroll-animate-delay-3 enhanced-card">
+          <h3 class="font-bold text-2xl mb-3">ATS hygiene</h3>
+          <p class="text-slate-600 text-lg leading-relaxed">Simple fixes to stay parse‑safe and avoid silent rejections.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section Divider -->
+  <div class="section-divider"></div>
+
+  <!-- DEMO CTA (Apple-style - bold, centered) -->
+  <section id="demo" class="bg-white section-padding">
+    <div class="container mx-auto px-4">
+      <div class="rounded-3xl border border-slate-200 p-12 md:p-16 shadow-soft max-w-4xl mx-auto text-center scroll-animate enhanced-card">
+        <h2 class="text-4xl md:text-6xl font-bold text-slate-900 mb-6">Try the prototype</h2>
+        <p class="text-xl md:text-2xl text-slate-600 mb-10 max-w-2xl mx-auto">Paste your resume, select a company, and get feedback in seconds. We don't store your data.</p>
+        <a href="indexdropbox.html" class="inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-semibold text-lg transition-all btn-primary" aria-label="Open prototype">
+          Open prototype
+        </a>
+        <p class="mt-6 text-sm text-slate-500">Hook this button to your deployed <code class="px-2 py-1 bg-slate-100 rounded-lg text-xs">/critique</code> endpoint when ready.</p>
+      </div>
+
+      <div id="waitlist" class="mt-16 rounded-2xl border border-slate-200 p-10 md:p-12 max-w-2xl mx-auto scroll-animate scroll-animate-delay-1 enhanced-card">
+        <h3 class="text-3xl md:text-4xl font-bold text-center mb-3">Join the waitlist</h3>
+        <p class="text-center text-xl text-slate-600 mb-8">Be the first to know when we launch</p>
+        <form id="waitlist-form" class="grid gap-4 max-w-md mx-auto" onsubmit="return false;" aria-label="Waitlist signup">
+          <input 
+            required 
+            id="wl-email" 
+            type="email" 
+            placeholder="you@school.edu" 
+            class="w-full rounded-xl border-2 border-slate-300 p-4 text-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all hover:border-slate-400" 
+            aria-label="Email address"
+          />
+          <button 
+            id="wl-btn" 
+            type="submit"
+            class="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-full text-white font-semibold text-lg transition-all btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            <span id="wl-btn-text">Get early access</span>
+          </button>
+          <p id="wl-msg" class="text-base text-emerald-600 text-center hidden" role="status" aria-live="polite">Thanks! You're on the list.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section Divider -->
+  <div class="section-divider"></div>
+
+  <!-- FAQ (Apple-style) -->
+  <section id="faq" class="bg-slate-50 border-t border-slate-200 section-padding">
+    <div class="container mx-auto px-4">
+      <h2 class="text-center text-4xl md:text-6xl font-bold text-slate-900 mb-4 scroll-animate">FAQ</h2>
+      <div class="grid gap-4 max-w-3xl mx-auto mt-16">
+        <details class="rounded-2xl border border-slate-200 p-6 bg-white hover:shadow-soft transition-all scroll-animate scroll-animate-delay-1 enhanced-card">
+          <summary class="font-bold text-xl cursor-pointer list-none flex items-center justify-between transition-colors hover:text-slate-900">
+            <span class="flex-1">Do you save my resume?</span>
+            <span class="text-slate-400 ml-4 text-2xl transition-transform flex-shrink-0" id="faq-icon-1">+</span>
+          </summary>
+          <p class="mt-4 text-slate-600 text-lg leading-relaxed">Prototype default is <strong>no storage</strong>. We process your text and discard it. Opt‑in analytics may arrive later.</p>
+        </details>
+        <details class="rounded-2xl border border-slate-200 p-6 bg-white hover:shadow-soft transition-all scroll-animate scroll-animate-delay-2 enhanced-card">
+          <summary class="font-bold text-xl cursor-pointer list-none flex items-center justify-between transition-colors hover:text-slate-900">
+            <span class="flex-1">Which companies are supported?</span>
+            <span class="text-slate-400 ml-4 text-2xl transition-transform flex-shrink-0" id="faq-icon-2">+</span>
+          </summary>
+          <p class="mt-4 text-slate-600 text-lg leading-relaxed">Google, Meta, Amazon, Microsoft, NVIDIA to start. Next up: Apple, Tesla, Stripe, Databricks, Shopify.</p>
+        </details>
+        <details class="rounded-2xl border border-slate-200 p-6 bg-white hover:shadow-soft transition-all scroll-animate scroll-animate-delay-3 enhanced-card">
+          <summary class="font-bold text-xl cursor-pointer list-none flex items-center justify-between transition-colors hover:text-slate-900">
+            <span class="flex-1">What makes this different from generic resume checkers?</span>
+            <span class="text-slate-400 ml-4 text-2xl transition-transform flex-shrink-0" id="faq-icon-3">+</span>
+          </summary>
+          <p class="mt-4 text-slate-600 text-lg leading-relaxed">We use <em>Company Playbooks</em> tuned to each employer's signals, style, and keywords. Results are structured, measurable, and recruiter‑grade.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200" role="contentinfo">
+    <div class="container mx-auto px-4 py-12 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="text-slate-600 text-base">© <span id="year"></span> Hirely. All rights reserved.</div>
+      <nav class="flex gap-6 text-base" aria-label="Footer navigation">
+        <a class="text-slate-600 hover:text-slate-900 transition-all" href="#">Privacy</a>
+        <a class="text-slate-600 hover:text-slate-900 transition-all" href="#">Terms</a>
+        <a class="text-slate-600 hover:text-slate-900 transition-all" href="#">Contact</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // Loading animation
+    window.addEventListener('load', () => {
+      const loader = document.getElementById('page-loader');
+      setTimeout(() => {
+        loader.classList.add('fade-out');
+        setTimeout(() => loader.remove(), 500);
+      }, 300);
+    });
+    
+    // Text reveal animations
+    const textRevealElements = document.querySelectorAll('.text-reveal');
+    const textObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry, index) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => {
+            entry.target.classList.add('visible');
+          }, index * 100);
+          textObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    
+    textRevealElements.forEach(el => textObserver.observe(el));
+    
+    // Navbar scroll effects
+    let lastScroll = 0;
+    const header = document.getElementById('main-header');
+    
+    window.addEventListener('scroll', () => {
+      const currentScroll = window.pageYOffset;
+      
+      if (currentScroll > 50) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+      
+      lastScroll = currentScroll;
+    });
+    
+    // Number animation for fit score
+    function animateNumber(element, target, duration = 2000) {
+      const start = 0;
+      const startTime = performance.now();
+      
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeOutQuad = 1 - (1 - progress) * (1 - progress);
+        const current = Math.floor(start + (target - start) * easeOutQuad);
+        element.textContent = current + '/100';
+        
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        }
+      }
+      
+      requestAnimationFrame(update);
+    }
+    
+    const fitScoreElement = document.getElementById('fit-score');
+    const scoreObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !entry.target.dataset.animated) {
+          animateNumber(fitScoreElement, 78);
+          entry.target.dataset.animated = 'true';
+          scoreObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+    
+    if (fitScoreElement) {
+      scoreObserver.observe(fitScoreElement.parentElement.parentElement.parentElement);
+    }
+    
+    // Parallax preview card
+    const previewCard = document.getElementById('preview-card-container');
+    if (previewCard) {
+      window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const rate = scrolled * 0.2;
+        previewCard.style.transform = `translateY(${rate}px)`;
+      });
+    }
+    
+    // FAQ icon rotation
+    document.querySelectorAll('details').forEach((detail, index) => {
+      const iconId = `faq-icon-${index + 1}`;
+      const icon = document.getElementById(iconId);
+      if (icon) {
+        detail.addEventListener('toggle', () => {
+          if (detail.open) {
+            icon.style.transform = 'rotate(45deg)';
+          } else {
+            icon.style.transform = 'rotate(0deg)';
+          }
+        });
+      }
+    });
+    
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuIcon = document.getElementById('menu-icon');
+    
+    mobileMenuBtn?.addEventListener('click', () => {
+      const isOpen = mobileMenu.classList.toggle('open');
+      mobileMenuBtn.setAttribute('aria-expanded', isOpen);
+      menuIcon.setAttribute('d', isOpen 
+        ? 'M6 18L18 6M6 6l12 12' 
+        : 'M4 6h16M4 12h16M4 18h16'
+      );
+    });
+    
+    // Close mobile menu when clicking nav links
+    document.querySelectorAll('#mobile-menu a').forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.remove('open');
+        mobileMenuBtn.setAttribute('aria-expanded', 'false');
+        menuIcon.setAttribute('d', 'M4 6h16M4 12h16M4 18h16');
+      });
+    });
+
+    // Waitlist form with better UX
+    const waitlistForm = document.getElementById('waitlist-form');
+    const wlEmail = document.getElementById('wl-email');
+    const wlBtn = document.getElementById('wl-btn');
+    const wlBtnText = document.getElementById('wl-btn-text');
+    const wlMsg = document.getElementById('wl-msg');
+
+    waitlistForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = wlEmail.value.trim();
+      
+      if (!email) {
+        wlEmail.focus();
+        return;
+      }
+
+      // Disable button and show loading
+      wlBtn.disabled = true;
+      wlBtnText.textContent = 'Adding...';
+
+      // Simulate API call (replace with actual API call)
+      setTimeout(() => {
+        try {
+          const list = JSON.parse(localStorage.getItem('waitlist') || '[]');
+          list.push({ email, ts: Date.now() });
+          localStorage.setItem('waitlist', JSON.stringify(list));
+        } catch (e) {
+          console.error('Error saving to localStorage', e);
+        }
+
+        wlMsg.classList.remove('hidden');
+        wlBtnText.textContent = 'Added ✓';
+        wlEmail.value = '';
+        
+        // Re-enable after 3 seconds
+        setTimeout(() => {
+          wlBtn.disabled = false;
+          wlBtnText.textContent = 'Get early access';
+        }, 3000);
+      }, 500);
+    });
+
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+    
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        if (href === '#') return;
+        
+        e.preventDefault();
+        const target = document.querySelector(href);
+        if (target) {
+          const headerOffset = 80;
+          const elementPosition = target.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+    
+    // Scroll-triggered animations (Apple style)
+    const observerOptions = {
+      threshold: 0.15,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          // Optional: stop observing after animation
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    // Observe all elements with scroll-animate class
+    document.querySelectorAll('.scroll-animate').forEach(el => {
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Hirely — Resume Analysis</title>
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+   <script src="https://cdn.tailwindcss.com"></script>
+   <style>
+       body {
+           font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+           -webkit-font-smoothing: antialiased;
+           -moz-osx-font-smoothing: grayscale;
+           background: linear-gradient(180deg, #fafbfc 0%, #f8fafc 100%);
+       }
+       
+       /* Enhanced animations */
+       @keyframes spin {
+           to { transform: rotate(360deg); }
+       }
+       
+       @keyframes fadeInUp {
+           from {
+               opacity: 0;
+               transform: translateY(30px);
+           }
+           to {
+               opacity: 1;
+               transform: translateY(0);
+           }
+       }
+       
+       @keyframes scaleIn {
+           from {
+               opacity: 0;
+               transform: scale(0.9);
+           }
+           to {
+               opacity: 1;
+               transform: scale(1);
+           }
+       }
+       
+       @keyframes shimmer {
+           0% { background-position: -1000px 0; }
+           100% { background-position: 1000px 0; }
+       }
+       
+       @keyframes slideIn {
+           from {
+               opacity: 0;
+               transform: translateX(-20px);
+           }
+           to {
+               opacity: 1;
+               transform: translateX(0);
+           }
+       }
+       
+       .animate-spin {
+           animation: spin 1s linear infinite;
+       }
+       
+       .animate-fade-in {
+           animation: fadeInUp 0.6s ease-out forwards;
+       }
+       
+       .animate-scale-in {
+           animation: scaleIn 0.5s ease-out forwards;
+       }
+       
+       /* Enhanced score circle */
+       .score-circle {
+           stroke-dasharray: 628.32;
+           stroke-dashoffset: 628.32;
+           transition: stroke-dashoffset 2s cubic-bezier(0.4, 0, 0.2, 1);
+           filter: drop-shadow(0 4px 12px rgba(15, 23, 42, 0.15));
+       }
+       
+       /* Reset circle when hidden */
+       #resultsSection.hidden .score-circle {
+           stroke-dashoffset: 628.32;
+       }
+       
+       .score-circle-container {
+           position: relative;
+       }
+       
+       .score-circle-container::before {
+           content: '';
+           position: absolute;
+           inset: -20px;
+           border-radius: 50%;
+           background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+           opacity: 0;
+           transition: opacity 0.5s ease;
+           z-index: -1;
+       }
+       
+       .score-circle-container:hover::before {
+           opacity: 1;
+       }
+       
+       /* Enhanced section cards */
+       .section-card {
+           transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+           position: relative;
+           overflow: hidden;
+           background: white;
+           border: 1px solid rgba(226, 232, 240, 0.8);
+           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+       }
+       
+       /* Override overflow for company filter card to allow dropdown */
+       .company-filter-card {
+           overflow: visible !important;
+       }
+       
+       .section-card::before {
+           content: '';
+           position: absolute;
+           top: 0;
+           left: -100%;
+           width: 100%;
+           height: 100%;
+           background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.05), transparent);
+           transition: left 0.6s ease;
+       }
+       
+       .section-card:hover::before {
+           left: 100%;
+       }
+       
+       .section-card:hover {
+           transform: translateY(-4px);
+           box-shadow: 
+               0 20px 40px rgba(0, 0, 0, 0.08),
+               0 0 0 1px rgba(99, 102, 241, 0.1) inset;
+           border-color: rgba(99, 102, 241, 0.2);
+       }
+       
+       /* Metric cards with glow */
+       .metric-card {
+           background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+           border: 1px solid rgba(226, 232, 240, 0.8);
+           transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+           position: relative;
+           overflow: hidden;
+       }
+       
+       .metric-card::after {
+           content: '';
+           position: absolute;
+           top: 0;
+           left: 0;
+           right: 0;
+           bottom: 0;
+           background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+           opacity: 0;
+           transition: opacity 0.4s ease;
+       }
+       
+       .metric-card:hover::after {
+           opacity: 1;
+       }
+       
+       .metric-card:hover {
+           transform: translateY(-4px) scale(1.02);
+           box-shadow: 
+               0 12px 32px rgba(99, 102, 241, 0.15),
+               0 0 0 1px rgba(99, 102, 241, 0.1) inset;
+           border-color: rgba(99, 102, 241, 0.3);
+       }
+       
+       /* Score display with gradient text */
+       .score-display {
+           background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+           -webkit-background-clip: text;
+           background-clip: text;
+           -webkit-text-fill-color: transparent;
+           font-weight: 800;
+           letter-spacing: -0.02em;
+       }
+       
+       /* Enhanced button styles */
+       .btn-reset {
+           transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+           position: relative;
+           overflow: hidden;
+       }
+       
+       .btn-reset::before {
+           content: '';
+           position: absolute;
+           top: 50%;
+           left: 50%;
+           width: 0;
+           height: 0;
+           border-radius: 50%;
+           background: rgba(99, 102, 241, 0.1);
+           transform: translate(-50%, -50%);
+           transition: width 0.6s, height 0.6s;
+       }
+       
+       .btn-reset:hover::before {
+           width: 300px;
+           height: 300px;
+       }
+       
+       .btn-reset:hover {
+           transform: translateY(-2px);
+           box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+           border-color: rgba(99, 102, 241, 0.3);
+       }
+       
+       /* Content preview with subtle glow */
+       .content-preview {
+           background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+           border: 1px solid rgba(226, 232, 240, 0.6);
+           position: relative;
+           transition: all 0.3s ease;
+       }
+       
+       .content-preview::before {
+           content: '';
+           position: absolute;
+           top: 0;
+           left: 0;
+           right: 0;
+           height: 3px;
+           background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3), transparent);
+           opacity: 0;
+           transition: opacity 0.3s ease;
+       }
+       
+       .section-card:hover .content-preview::before {
+           opacity: 1;
+       }
+       
+       /* Feedback items with smooth entrance */
+       .feedback-item {
+           animation: slideIn 0.4s ease-out backwards;
+       }
+       
+       .feedback-item:nth-child(1) { animation-delay: 0.1s; }
+       .feedback-item:nth-child(2) { animation-delay: 0.2s; }
+       .feedback-item:nth-child(3) { animation-delay: 0.3s; }
+       .feedback-item:nth-child(4) { animation-delay: 0.4s; }
+       
+       /* Enhanced score colors */
+       .score-excellent {
+           color: #10b981;
+           background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+           -webkit-background-clip: text;
+           background-clip: text;
+           -webkit-text-fill-color: transparent;
+       }
+       
+       .score-good {
+           color: #f59e0b;
+           background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+           -webkit-background-clip: text;
+           background-clip: text;
+           -webkit-text-fill-color: transparent;
+       }
+       
+       .score-needs-improvement {
+           color: #ef4444;
+           background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+           -webkit-background-clip: text;
+           background-clip: text;
+           -webkit-text-fill-color: transparent;
+       }
+       
+       /* Header with subtle gradient */
+       .results-header {
+           background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
+           backdrop-filter: blur(20px);
+           border: 1px solid rgba(226, 232, 240, 0.8);
+           box-shadow: 
+               0 10px 40px rgba(0, 0, 0, 0.06),
+               0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+       }
+       
+       /* Number counter animation */
+       .number-counter {
+           font-variant-numeric: tabular-nums;
+           transition: all 0.3s ease;
+       }
+       
+       /* Icon enhancements */
+       .icon-improvement {
+           filter: drop-shadow(0 2px 4px rgba(239, 68, 68, 0.2));
+           transition: transform 0.3s ease;
+       }
+       
+       .section-card:hover .icon-improvement {
+           transform: scale(1.1) rotate(5deg);
+       }
+       
+       .icon-strength {
+           filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.2));
+           transition: transform 0.3s ease;
+       }
+       
+       .section-card:hover .icon-strength {
+           transform: scale(1.1) rotate(-5deg);
+       }
+       
+       /* Section title gradient */
+       .section-title {
+           background: linear-gradient(135deg, #0f172a 0%, #475569 100%);
+           -webkit-background-clip: text;
+           background-clip: text;
+           -webkit-text-fill-color: transparent;
+           letter-spacing: -0.01em;
+       }
+       
+       /* Progress indicator for metrics */
+       .metric-progress {
+           height: 4px;
+           background: rgba(226, 232, 240, 0.5);
+           border-radius: 2px;
+           overflow: hidden;
+           margin-top: 8px;
+           position: relative;
+       }
+       
+       .metric-progress-bar {
+           height: 100%;
+           background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+           border-radius: 2px;
+           transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+           position: relative;
+           overflow: hidden;
+       }
+       
+       .metric-progress-bar::after {
+           content: '';
+           position: absolute;
+           top: 0;
+           left: 0;
+           right: 0;
+           bottom: 0;
+           background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+           animation: shimmer 2s infinite;
+       }
+       
+       /* Smooth scroll reveal */
+       .reveal-on-scroll {
+           opacity: 0;
+           transform: translateY(30px);
+           transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+       }
+       
+       .reveal-on-scroll.visible {
+           opacity: 1;
+           transform: translateY(0);
+       }
+       
+       /* Company dropdown styles */
+       #dropdownArrow {
+           transition: transform 0.3s ease;
+       }
+       
+       #companyDropdown {
+           z-index: 9999 !important;
+       }
+       
+       @media (max-width: 640px) {
+           #companyDropdown {
+               left: 0;
+               right: auto;
+               width: 100%;
+           }
+       }
+   </style>
+</head>
+<body class="bg-white text-slate-800 min-h-screen">
+   <!-- Header -->
+   <header class="bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
+       <div class="container mx-auto px-4 py-4 max-w-6xl">
+           <div class="flex items-center justify-between">
+               <a href="index.html" class="flex items-center gap-2 focus:outline-none">
+                   <span class="inline-grid place-items-center w-9 h-9 rounded-lg bg-slate-900 text-white text-sm font-black">HY</span>
+                   <h1 class="text-2xl font-semibold tracking-tight text-slate-900">
+                       Hirely
+                   </h1>
+               </a>
+               <nav class="hidden md:flex space-x-6">
+                   <a href="index.html" class="text-slate-600 hover:text-slate-900 font-medium transition-colors">Back to Home</a>
+               </nav>
+           </div>
+       </div>
+   </header>
+
+
+   <!-- Main Content -->
+   <main class="container mx-auto px-4 py-8 max-w-6xl">
+       <!-- Error Message -->
+       <div id="errorContainer" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg hidden" role="alert">
+           <div class="flex items-start">
+               <div class="flex-shrink-0">
+                   <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                       <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd"></path>
+                   </svg>
+               </div>
+               <div class="ml-3 flex-1">
+                   <h3 class="text-sm font-medium text-red-800">Error</h3>
+                   <p id="errorMessage" class="mt-1 text-sm text-red-700"></p>
+               </div>
+               <div class="ml-auto pl-3">
+                   <button type="button" onclick="handleRetry()" class="inline-flex rounded-md bg-red-50 p-1.5 text-red-500 hover:bg-red-100" aria-label="Retry">
+                       <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                           <path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clip-rule="evenodd"></path>
+                       </svg>
+                   </button>
+               </div>
+           </div>
+       </div>
+
+
+       <!-- Upload Section -->
+       <div id="uploadSection" class="mt-8">
+           <div class="text-center mb-8">
+               <h2 class="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Analyze Your Resume</h2>
+               <p class="text-slate-600 text-lg max-w-2xl mx-auto">
+                   Get instant feedback on your resume with AI-powered analysis. Improve clarity, impact, and professionalism.
+               </p>
+           </div>
+
+           <!-- Company Filter Section -->
+           <div class="max-w-4xl mx-auto mb-8" style="position: relative; z-index: 100;">
+               <div class="bg-white rounded-xl shadow-lg p-6 border border-slate-200 section-card company-filter-card" style="position: relative; z-index: 100;">
+                   <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                       <div class="flex items-center gap-3">
+                           <svg class="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                           </svg>
+                           <span class="text-slate-700 font-medium">Filter by Company:</span>
+                       </div>
+                       <div class="relative" style="z-index: 101;">
+                           <button
+                               id="companyFilterBtn"
+                               onclick="toggleCompanyDropdown()"
+                               class="flex items-center gap-3 px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg hover:bg-slate-100 hover:border-slate-400 transition-all min-w-[200px] justify-between"
+                           >
+                               <span id="selectedCompanyText" class="text-slate-900 font-medium">Select Company</span>
+                               <svg id="dropdownArrow" class="w-5 h-5 text-slate-600 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                               </svg>
+                           </button>
+                           
+                           <!-- Company Dropdown -->
+                           <div id="companyDropdown" class="hidden absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl max-h-96 overflow-y-auto w-full min-w-[200px]" style="z-index: 10000; position: absolute;">
+                               <div class="p-2">
+                                   <button
+                                       onclick="selectCompany(null)"
+                                       class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-50 transition-colors text-left"
+                                   >
+                                       <div class="flex-1">
+                                           <div class="font-medium text-slate-900">All Companies</div>
+                                           <div class="text-xs text-slate-500">General feedback</div>
+                                       </div>
+                                   </button>
+                                   <button
+                                       onclick="selectCompany('Google')"
+                                       class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-50 transition-colors text-left"
+                                   >
+                                       <img src="images/Google__G__logo.svg.png" alt="Google" class="w-8 h-8 object-contain">
+                                       <div class="flex-1">
+                                           <div class="font-medium text-slate-900">Google</div>
+                                           <div class="text-xs text-slate-500">Google-specific feedback</div>
+                                       </div>
+                                   </button>
+                                   <button
+                                       onclick="selectCompany('Meta')"
+                                       class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-50 transition-colors text-left"
+                                   >
+                                       <img src="images/Meta-Logo.png" alt="Meta" class="w-8 h-8 object-contain">
+                                       <div class="flex-1">
+                                           <div class="font-medium text-slate-900">Meta</div>
+                                           <div class="text-xs text-slate-500">Meta-specific feedback</div>
+                                       </div>
+                                   </button>
+                                   <button
+                                       onclick="selectCompany('Amazon')"
+                                       class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-50 transition-colors text-left"
+                                   >
+                                       <img src="images/Amazon_logo.svg.webp" alt="Amazon" class="w-8 h-8 object-contain">
+                                       <div class="flex-1">
+                                           <div class="font-medium text-slate-900">Amazon</div>
+                                           <div class="text-xs text-slate-500">Amazon-specific feedback</div>
+                                       </div>
+                                   </button>
+                                   <button
+                                       onclick="selectCompany('Microsoft')"
+                                       class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-50 transition-colors text-left"
+                                   >
+                                       <img src="images/pngimg.com - microsoft_PNG13.png" alt="Microsoft" class="w-8 h-8 object-contain">
+                                       <div class="flex-1">
+                                           <div class="font-medium text-slate-900">Microsoft</div>
+                                           <div class="text-xs text-slate-500">Microsoft-specific feedback</div>
+                                       </div>
+                                   </button>
+                                   <button
+                                       onclick="selectCompany('NVIDIA')"
+                                       class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-50 transition-colors text-left"
+                                   >
+                                       <img src="images/NVIDIA_logo.png" alt="NVIDIA" class="w-8 h-8 object-contain">
+                                       <div class="flex-1">
+                                           <div class="font-medium text-slate-900">NVIDIA</div>
+                                           <div class="text-xs text-slate-500">NVIDIA-specific feedback</div>
+                                       </div>
+                                   </button>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+                   <div id="selectedCompanyBadge" class="mt-4 hidden">
+                       <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full text-sm">
+                           <span class="text-slate-600">Selected:</span>
+                           <span id="selectedCompanyName" class="font-semibold text-slate-900"></span>
+                           <button onclick="clearCompanySelection()" class="text-slate-500 hover:text-slate-700">
+                               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                               </svg>
+                           </button>
+                       </div>
+                   </div>
+               </div>
+           </div>
+
+           <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto" style="position: relative; z-index: 1;">
+               <!-- File Upload Card -->
+               <div class="bg-white rounded-xl shadow-lg p-8 border border-slate-200 section-card">
+                   <div class="text-center mb-6">
+                       <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                           <svg class="w-8 h-8 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                           </svg>
+                       </div>
+                       <h3 class="text-xl font-semibold text-slate-900 mb-2">Upload Resume</h3>
+                       <p class="text-slate-500 text-sm">Upload your PDF or Word document</p>
+                   </div>
+                   <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 hover:bg-slate-50 transition-colors">
+                       <input type="file" id="fileInput" accept=".pdf,.doc,.docx" class="hidden" onchange="handleFileSelect(event)">
+                       <label for="fileInput" class="cursor-pointer">
+                           <svg class="w-12 h-12 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                           </svg>
+                           <p class="text-slate-600 mb-2">
+                               <span class="text-slate-900 font-medium">Click to upload</span> or drag and drop
+                           </p>
+                           <p class="text-slate-400 text-xs">PDF, DOC, DOCX (Max 10MB)</p>
+                       </label>
+                   </div>
+                   <div id="fileName" class="mt-4 text-sm text-slate-600 text-center hidden"></div>
+               </div>
+
+
+               <!-- Text Input Card -->
+               <div class="bg-white rounded-xl shadow-lg p-8 border border-slate-200 section-card">
+                   <div class="text-center mb-6">
+                       <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                           <svg class="w-8 h-8 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                           </svg>
+                       </div>
+                       <h3 class="text-xl font-semibold text-slate-900 mb-2">Paste Text</h3>
+                       <p class="text-slate-500 text-sm">Paste your resume content here</p>
+                   </div>
+                   <textarea
+                       id="textInput"
+                       rows="8"
+                       placeholder="Paste your resume content here...&#10;&#10;Example:&#10;John Doe&#10;Software Engineer&#10;&#10;Experience:&#10;Led a team of 8 engineers..."
+                       class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 transition-colors resize-none text-slate-700"
+                   ></textarea>
+                   <button
+                       onclick="handleTextSubmit()"
+                       class="w-full mt-4 bg-slate-900 text-white py-3 rounded-lg font-semibold hover:bg-slate-800 transition-all shadow-md hover:shadow-lg"
+                   >
+                       Analyze Text
+                   </button>
+               </div>
+           </div>
+       </div>
+
+
+       <!-- Loading State -->
+       <div id="loadingSection" class="flex flex-col items-center justify-center min-h-[400px] hidden">
+           <div class="w-16 h-16 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mb-4"></div>
+           <p class="text-slate-600 font-medium">Analyzing resume...</p>
+           <p class="text-slate-400 text-sm mt-2">Analyzing content and preparing feedback...</p>
+       </div>
+
+
+       <!-- Results Section -->
+       <div id="resultsSection" class="hidden">
+           <!-- Overall Score -->
+           <div class="results-header rounded-2xl p-8 md:p-10 mb-8 animate-fade-in">
+               <div class="flex items-center justify-between mb-8">
+                   <div>
+                       <h2 class="text-4xl md:text-5xl font-bold text-slate-900 mb-2">Analysis Results</h2>
+                       <p class="text-slate-600">Comprehensive feedback to help you improve your resume</p>
+                   </div>
+                   <button onclick="handleReset()" class="btn-reset px-6 py-3 text-slate-700 hover:text-slate-900 border-2 border-slate-300 rounded-xl font-semibold relative z-10 transition-all">
+                       Reset
+                   </button>
+               </div>
+               
+               <div class="flex flex-col lg:flex-row items-center lg:items-start gap-10">
+                   <!-- Enhanced Score Circle -->
+                   <div class="score-circle-container flex-shrink-0">
+                       <div class="relative">
+                           <svg class="w-48 h-48 md:w-56 md:h-56 transform -rotate-90">
+                               <defs>
+                                   <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                       <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+                                       <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                                       <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+                                   </linearGradient>
+                               </defs>
+                               <circle cx="112" cy="112" r="100" stroke="#e2e8f0" stroke-width="16" fill="none" opacity="0.5"></circle>
+                               <circle id="scoreCircle" cx="112" cy="112" r="100" stroke="url(#scoreGradient)" stroke-width="16" fill="none" class="score-circle" stroke-linecap="round" style="stroke-dasharray: 628.32; stroke-dashoffset: 628.32;"></circle>
+                           </svg>
+                           <div class="absolute inset-0 flex items-center justify-center">
+                               <div class="text-center">
+                                   <div id="overallScore" class="score-display text-5xl md:text-6xl mb-2 number-counter">0</div>
+                                   <div class="text-sm text-slate-500 font-medium uppercase tracking-wider">Overall Score</div>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+                   
+                   <!-- Enhanced Metric Cards -->
+                   <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-5 w-full lg:w-auto">
+                       <div class="metric-card rounded-xl p-6 animate-scale-in" style="animation-delay: 0.1s">
+                           <div class="flex items-center justify-between mb-3">
+                               <div class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Clarity</div>
+                               <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                               </svg>
+                           </div>
+                           <div id="clarityScore" class="score-display text-4xl mb-3 number-counter">0</div>
+                           <div class="metric-progress">
+                               <div id="clarityProgress" class="metric-progress-bar" style="width: 0%"></div>
+                           </div>
+                       </div>
+                       
+                       <div class="metric-card rounded-xl p-6 animate-scale-in" style="animation-delay: 0.2s">
+                           <div class="flex items-center justify-between mb-3">
+                               <div class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Impact</div>
+                               <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                               </svg>
+                           </div>
+                           <div id="impactScore" class="score-display text-4xl mb-3 number-counter">0</div>
+                           <div class="metric-progress">
+                               <div id="impactProgress" class="metric-progress-bar" style="width: 0%"></div>
+                           </div>
+                       </div>
+                       
+                       <div class="metric-card rounded-xl p-6 animate-scale-in" style="animation-delay: 0.3s">
+                           <div class="flex items-center justify-between mb-3">
+                               <div class="text-sm font-semibold text-slate-600 uppercase tracking-wider">Professionalism</div>
+                               <svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                               </svg>
+                           </div>
+                           <div id="professionalismScore" class="score-display text-4xl mb-3 number-counter">0</div>
+                           <div class="metric-progress">
+                               <div id="professionalismProgress" class="metric-progress-bar" style="width: 0%"></div>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+           </div>
+
+           <!-- Section Analysis -->
+           <div id="sectionsContainer" class="space-y-6"></div>
+       </div>
+   </main>
+
+
+   <script>
+       // State management
+       let currentState = {
+           status: 'idle',
+           result: null,
+           error: null,
+           selectedCompany: null
+       };
+
+       // Company filter functions
+       function toggleCompanyDropdown() {
+           const dropdown = document.getElementById('companyDropdown');
+           const arrow = document.getElementById('dropdownArrow');
+           
+           if (dropdown && arrow) {
+               dropdown.classList.toggle('hidden');
+               arrow.classList.toggle('rotate-180');
+           }
+       }
+
+       function selectCompany(companyName) {
+           currentState.selectedCompany = companyName;
+           
+           const selectedCompanyText = document.getElementById('selectedCompanyText');
+           const selectedCompanyBadge = document.getElementById('selectedCompanyBadge');
+           const selectedCompanyName = document.getElementById('selectedCompanyName');
+           
+           if (selectedCompanyText && selectedCompanyBadge && selectedCompanyName) {
+               if (companyName) {
+                   selectedCompanyText.textContent = companyName;
+                   selectedCompanyName.textContent = companyName;
+                   selectedCompanyBadge.classList.remove('hidden');
+               } else {
+                   selectedCompanyText.textContent = 'All Companies';
+                   selectedCompanyBadge.classList.add('hidden');
+               }
+           }
+           
+           toggleCompanyDropdown();
+       }
+
+       function clearCompanySelection() {
+           selectCompany(null);
+       }
+
+       // Close dropdown when clicking outside
+       document.addEventListener('click', (e) => {
+           const dropdown = document.getElementById('companyDropdown');
+           const filterBtn = document.getElementById('companyFilterBtn');
+           const arrow = document.getElementById('dropdownArrow');
+           
+           if (dropdown && filterBtn && arrow) {
+               if (!dropdown.contains(e.target) && !filterBtn.contains(e.target)) {
+                   if (!dropdown.classList.contains('hidden')) {
+                       dropdown.classList.add('hidden');
+                       arrow.classList.remove('rotate-180');
+                   }
+               }
+           }
+       });
+
+
+       // Mock analysis functions
+       const ANALYSIS_DELAY = 2500;
+
+
+       const generateMockFileAnalysis = () => ({
+           overallScore: 73,
+           sections: [
+               {
+                   name: 'Professional Summary',
+                   score: 65,
+                   feedback: [
+                       'Too generic - avoid buzzwords like "dynamic" and "results-oriented"',
+                       'Add specific achievements or unique value proposition',
+                       'Quantify your experience with years and key accomplishments'
+                   ],
+                   text: 'Dynamic and results-oriented professional with extensive experience in driving business growth and optimizing operational efficiency.',
+                   strengths: ['Concise length', 'Clear focus on business impact']
+               },
+               {
+                   name: 'Work Experience',
+                   score: 88,
+                   feedback: [
+                       'Excellent use of specific metrics',
+                       'Consider adding the timeframe for this achievement'
+                   ],
+                   text: 'Led a cross-functional team of 8 engineers to deliver a customer analytics platform that increased user engagement by 34% and reduced churn by 12%.',
+                   strengths: [
+                       'Strong quantifiable results',
+                       'Clear leadership demonstration',
+                       'Specific team size mentioned'
+                   ]
+               },
+               {
+                   name: 'Skills Section',
+                   score: 58,
+                   feedback: [
+                       'List is too broad - focus on 5-7 most relevant skills for target role',
+                       'Add proficiency levels (e.g., Expert, Intermediate)',
+                       'Group related skills together for better readability'
+                   ],
+                   text: 'Python, JavaScript, React, Node.js, SQL, MongoDB, AWS, Docker, Kubernetes, Machine Learning, Data Analysis',
+                   strengths: ['Good variety of technical and analytical skills']
+               }
+           ],
+           metrics: {
+               clarity: 72,
+               impact: 78,
+               professionalism: 69
+           }
+       });
+
+
+       const generateMockTextAnalysis = (text) => ({
+           overallScore: 81,
+           sections: [
+               {
+                   name: 'Overall Content',
+                   score: 81,
+                   feedback: [
+                       'Strong personal voice - good authenticity',
+                       'Consider breaking into distinct sections',
+                       'Add more quantifiable achievements'
+                   ],
+                   text: text.substring(0, 200) + '...',
+                   strengths: ['Authentic voice', 'Clear communication style']
+               }
+           ],
+           metrics: {
+               clarity: 84,
+               impact: 76,
+               professionalism: 83
+           }
+       });
+
+
+       // Analysis functions
+       async function analyzeFile(file) {
+           // Validate file type - Backend only accepts PDF
+           if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
+               throw new Error('Only PDF files are accepted. Please upload a PDF file.');
+           }
+
+           // Validate file size (10MB limit)
+           if (file.size > 10 * 1024 * 1024) {
+               throw new Error('File size exceeds 10MB limit.');
+           }
+
+           // Require company selection
+           const company = currentState.selectedCompany || 'General';
+           if (!currentState.selectedCompany) {
+               // Use General as default if no company selected
+               currentState.selectedCompany = 'General';
+           }
+
+           // Upload to backend API
+           const formData = new FormData();
+           formData.append('file', file);
+           formData.append('company', currentState.selectedCompany);
+
+           try {
+               const response = await fetch('http://localhost:8000/upload', {
+                   method: 'POST',
+                   body: formData
+               });
+
+               if (!response.ok) {
+                   const errorData = await response.json();
+                   throw new Error(errorData.detail || 'Upload failed. Please try again.');
+               }
+
+               const result = await response.json();
+               
+               // Show success message
+               showSuccessMessage(`Resume uploaded successfully! Document ID: ${result.document_id.substring(0, 8)}...`);
+               
+               // Still show mock analysis for now (can be replaced with real analysis later)
+               await new Promise(resolve => setTimeout(resolve, 1000));
+               return generateMockFileAnalysis();
+               
+           } catch (error) {
+               if (error.message.includes('fetch')) {
+                   throw new Error('Cannot connect to backend server. Make sure the backend is running on http://localhost:8000');
+               }
+               throw error;
+           }
+       }
+
+
+       async function analyzeText(text) {
+           if (!text.trim()) {
+               throw new Error('Text input cannot be empty.');
+           }
+
+
+           if (text.length < 50) {
+               throw new Error('Text input is too short. Please provide at least 50 characters.');
+           }
+
+
+           await new Promise(resolve => setTimeout(resolve, ANALYSIS_DELAY));
+           return generateMockTextAnalysis(text);
+       }
+
+
+       // UI Update functions
+       function showError(message) {
+           currentState.error = message;
+           const errorContainer = document.getElementById('errorContainer');
+           const errorMessage = document.getElementById('errorMessage');
+           errorMessage.textContent = message;
+           errorContainer.classList.remove('hidden');
+       }
+
+
+       function hideError() {
+           currentState.error = null;
+           document.getElementById('errorContainer').classList.add('hidden');
+       }
+
+       function showSuccessMessage(message) {
+           // Create or update success message
+           let successContainer = document.getElementById('successContainer');
+           if (!successContainer) {
+               successContainer = document.createElement('div');
+               successContainer.id = 'successContainer';
+               successContainer.className = 'mb-6 p-4 bg-green-50 border border-green-200 rounded-lg';
+               successContainer.innerHTML = `
+                   <div class="flex items-start">
+                       <div class="flex-shrink-0">
+                           <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"></path>
+                           </svg>
+                       </div>
+                       <div class="ml-3 flex-1">
+                           <h3 class="text-sm font-medium text-green-800">Success</h3>
+                           <p id="successMessage" class="mt-1 text-sm text-green-700"></p>
+                       </div>
+                       <div class="ml-auto pl-3">
+                           <button type="button" onclick="document.getElementById('successContainer').classList.add('hidden')" class="inline-flex rounded-md bg-green-50 p-1.5 text-green-500 hover:bg-green-100">
+                               <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                   <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"></path>
+                               </svg>
+                           </button>
+                       </div>
+                   </div>
+               `;
+               const uploadSection = document.getElementById('uploadSection');
+               uploadSection.parentNode.insertBefore(successContainer, uploadSection);
+           }
+           document.getElementById('successMessage').textContent = message;
+           successContainer.classList.remove('hidden');
+           hideError();
+       }
+
+
+       function showLoading() {
+           document.getElementById('uploadSection').classList.add('hidden');
+           document.getElementById('loadingSection').classList.remove('hidden');
+           document.getElementById('resultsSection').classList.add('hidden');
+           hideError();
+       }
+
+
+       function showResults(result) {
+           currentState.result = result;
+           document.getElementById('uploadSection').classList.add('hidden');
+           document.getElementById('loadingSection').classList.add('hidden');
+           document.getElementById('resultsSection').classList.remove('hidden');
+
+           // Animate overall score with counting
+           const overallScore = result.overallScore;
+           animateCounter(document.getElementById('overallScore'), 0, overallScore, 2000);
+           
+           // Animate score circle
+           setTimeout(() => {
+               const circle = document.getElementById('scoreCircle');
+               if (!circle) {
+                   console.error('Circle element not found');
+                   return;
+               }
+               
+               const radius = 100;
+               // Use fixed calculation: 2 * Math.PI * 100 = 628.318
+               const circumference = 2 * Math.PI * radius;
+               
+               // Ensure dasharray is set
+               circle.style.strokeDasharray = `${circumference} ${circumference}`;
+               
+               // Start from fully hidden (completely offset)
+               circle.style.strokeDashoffset = circumference;
+               
+               // Ensure stroke is visible (gradient should already be applied via HTML)
+               circle.setAttribute('stroke', 'url(#scoreGradient)');
+               
+               // Force browser recalculation
+               void circle.offsetHeight;
+               
+               // Calculate final offset - for score 73, show 73% of circle
+               const percentVisible = overallScore / 100;
+               const finalOffset = circumference * (1 - percentVisible);
+               
+               // Animate to final position
+               requestAnimationFrame(() => {
+                   requestAnimationFrame(() => {
+                       circle.style.transition = 'stroke-dashoffset 2s cubic-bezier(0.4, 0, 0.2, 1)';
+                       circle.style.strokeDashoffset = finalOffset;
+                   });
+               });
+           }, 100);
+
+           // Animate metrics with counters and progress bars
+           setTimeout(() => {
+               animateCounter(document.getElementById('clarityScore'), 0, result.metrics.clarity, 1500);
+               animateCounter(document.getElementById('impactScore'), 0, result.metrics.impact, 1500);
+               animateCounter(document.getElementById('professionalismScore'), 0, result.metrics.professionalism, 1500);
+               
+               // Animate progress bars
+               setTimeout(() => {
+                   document.getElementById('clarityProgress').style.width = result.metrics.clarity + '%';
+                   document.getElementById('impactProgress').style.width = result.metrics.impact + '%';
+                   document.getElementById('professionalismProgress').style.width = result.metrics.professionalism + '%';
+               }, 500);
+           }, 500);
+
+           // Render sections with enhanced animations
+           const sectionsContainer = document.getElementById('sectionsContainer');
+           sectionsContainer.innerHTML = result.sections.map((section, index) => `
+               <div class="section-card rounded-2xl p-8 reveal-on-scroll" style="animation-delay: ${index * 0.15}s">
+                   <div class="flex items-start justify-between mb-6">
+                       <h3 class="section-title text-2xl md:text-3xl font-bold">${section.name}</h3>
+                       <div class="flex items-center space-x-2">
+                           <div class="text-3xl md:text-4xl font-bold ${getScoreColorClass(section.score)}">${section.score}</div>
+                           <span class="text-slate-400 text-lg">/100</span>
+                       </div>
+                   </div>
+                  
+                   <div class="mb-6">
+                       <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Content Preview</div>
+                       <div class="content-preview p-4 rounded-xl">
+                           <p class="text-slate-700 leading-relaxed">${escapeHtml(section.text)}</p>
+                       </div>
+                   </div>
+
+                   <div class="grid md:grid-cols-2 gap-6">
+                       <div>
+                           <div class="text-sm font-bold text-slate-900 mb-4 flex items-center">
+                               <svg class="icon-improvement w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                               </svg>
+                               Areas for Improvement
+                           </div>
+                           <ul class="space-y-3">
+                               ${section.feedback.map((fb, idx) => `
+                                   <li class="feedback-item text-sm text-slate-700 flex items-start bg-red-50/50 rounded-lg p-3 border-l-4 border-red-300">
+                                       <span class="text-red-500 mr-3 mt-0.5 font-bold">•</span>
+                                       <span class="flex-1">${escapeHtml(fb)}</span>
+                                   </li>
+                               `).join('')}
+                           </ul>
+                       </div>
+                       <div>
+                           <div class="text-sm font-bold text-slate-900 mb-4 flex items-center">
+                               <svg class="icon-strength w-5 h-5 text-emerald-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                               </svg>
+                               Strengths
+                           </div>
+                           <ul class="space-y-3">
+                               ${section.strengths.map((strength, idx) => `
+                                   <li class="feedback-item text-sm text-slate-700 flex items-start bg-emerald-50/50 rounded-lg p-3 border-l-4 border-emerald-300">
+                                       <span class="text-emerald-600 mr-3 mt-0.5 font-bold">✓</span>
+                                       <span class="flex-1">${escapeHtml(strength)}</span>
+                                   </li>
+                               `).join('')}
+                           </ul>
+                       </div>
+                   </div>
+               </div>
+           `).join('');
+           
+           // Trigger scroll reveal animations
+           setTimeout(() => {
+               const reveals = sectionsContainer.querySelectorAll('.reveal-on-scroll');
+               reveals.forEach((el, idx) => {
+                   setTimeout(() => {
+                       el.classList.add('visible');
+                   }, idx * 100);
+               });
+           }, 100);
+       }
+
+
+       function showUpload() {
+           document.getElementById('uploadSection').classList.remove('hidden');
+           document.getElementById('loadingSection').classList.add('hidden');
+           document.getElementById('resultsSection').classList.add('hidden');
+           hideError();
+       }
+
+
+       function getScoreColor(score) {
+           if (score >= 80) return 'text-emerald-600';
+           if (score >= 60) return 'text-amber-600';
+           return 'text-red-600';
+       }
+
+       function getScoreColorClass(score) {
+           if (score >= 80) return 'score-excellent';
+           if (score >= 60) return 'score-good';
+           return 'score-needs-improvement';
+       }
+
+       function animateCounter(element, start, end, duration) {
+           const startTime = performance.now();
+           const animate = (currentTime) => {
+               const elapsed = currentTime - startTime;
+               const progress = Math.min(elapsed / duration, 1);
+               const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+               const current = Math.floor(start + (end - start) * easeOutCubic);
+               element.textContent = current;
+               
+               if (progress < 1) {
+                   requestAnimationFrame(animate);
+               } else {
+                   element.textContent = end;
+               }
+           };
+           requestAnimationFrame(animate);
+       }
+
+       function escapeHtml(text) {
+           const div = document.createElement('div');
+           div.textContent = text;
+           return div.innerHTML;
+       }
+
+
+       // Event handlers
+       async function handleFileSelect(event) {
+           const file = event.target.files[0];
+           if (!file) return;
+
+           // Check if company is selected, warn if not
+           if (!currentState.selectedCompany) {
+               const proceed = confirm('No company selected. Will use "General" as default. Continue?');
+               if (!proceed) {
+                   return;
+               }
+               currentState.selectedCompany = 'General';
+               selectCompany('General');
+           }
+
+           document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+           document.getElementById('fileName').classList.remove('hidden');
+
+           try {
+               showLoading();
+               const result = await analyzeFile(file);
+               showResults(result);
+           } catch (error) {
+               showError(error.message);
+               showUpload();
+           }
+       }
+
+
+       async function handleTextSubmit() {
+           const textInput = document.getElementById('textInput');
+           const text = textInput.value.trim();
+
+
+           try {
+               showLoading();
+               const result = await analyzeText(text);
+               showResults(result);
+           } catch (error) {
+               showError(error.message);
+               showUpload();
+           }
+       }
+
+
+       function handleReset() {
+           currentState = {
+               status: 'idle',
+               result: null,
+               error: null,
+               selectedCompany: null
+           };
+           document.getElementById('fileInput').value = '';
+           document.getElementById('textInput').value = '';
+           document.getElementById('fileName').classList.add('hidden');
+           clearCompanySelection();
+           showUpload();
+       }
+
+
+       function handleRetry() {
+           handleReset();
+       }
+
+
+       // Drag and drop for file upload
+       function preventDefaults(e) {
+           e.preventDefault();
+           e.stopPropagation();
+       }
+
+       const fileInput = document.getElementById('fileInput');
+       const uploadCard = fileInput.closest('.section-card');
+
+       if (uploadCard) {
+           const dashedBorder = uploadCard.querySelector('.border-dashed');
+           
+           if (dashedBorder) {
+               ['dragenter', 'dragover'].forEach(eventName => {
+                   uploadCard.addEventListener(eventName, (e) => {
+                       preventDefaults(e);
+                       dashedBorder.classList.add('border-slate-500', 'bg-slate-100');
+                   }, false);
+               });
+
+               uploadCard.addEventListener('dragleave', (e) => {
+                   preventDefaults(e);
+                   dashedBorder.classList.remove('border-slate-500', 'bg-slate-100');
+               }, false);
+
+               uploadCard.addEventListener('drop', (e) => {
+                   preventDefaults(e);
+                   dashedBorder.classList.remove('border-slate-500', 'bg-slate-100');
+                   const dt = e.dataTransfer;
+                   const files = dt.files;
+                   if (files.length > 0) {
+                       fileInput.files = files;
+                       handleFileSelect({ target: fileInput });
+                   }
+               }, false);
+           }
+       }
+   </script>
+</body>
+</html>
