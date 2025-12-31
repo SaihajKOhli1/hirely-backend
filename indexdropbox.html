@@ -847,30 +847,53 @@
            formData.append('file', file);
            formData.append('company', currentState.selectedCompany);
 
+           // Create AbortController for timeout
+           const abortController = new AbortController();
+           const timeoutId = setTimeout(() => abortController.abort(), 20000); // 20 second timeout
+
            try {
-               const response = await fetch('http://localhost:8000/upload', {
+               const response = await fetch('https://hirely-api-production.up.railway.app/upload', {
                    method: 'POST',
-                   body: formData
+                   body: formData,
+                   signal: abortController.signal
                });
 
+               clearTimeout(timeoutId); // Clear timeout if request completes
+
                if (!response.ok) {
-                   const errorData = await response.json();
-                   throw new Error(errorData.detail || 'Upload failed. Please try again.');
+                   const errorData = await response.json().catch(() => ({}));
+                   throw new Error(errorData.detail || `Upload failed with status ${response.status}. Please try again.`);
                }
 
                const result = await response.json();
                
+               // Store document_id globally and log it
+               if (result.document_id) {
+                   window.lastUploadId = result.document_id;
+                   console.log('Upload successful. Document ID:', result.document_id);
+               }
+               
                // Show success message
-               showSuccessMessage(`Resume uploaded successfully! Document ID: ${result.document_id.substring(0, 8)}...`);
+               showSuccessMessage(`Resume uploaded successfully! Document ID: ${result.document_id ? result.document_id.substring(0, 8) + '...' : 'N/A'}`);
                
                // Still show mock analysis for now (can be replaced with real analysis later)
                await new Promise(resolve => setTimeout(resolve, 1000));
                return generateMockFileAnalysis();
                
            } catch (error) {
-               if (error.message.includes('fetch')) {
-                   throw new Error('Cannot connect to backend server. Make sure the backend is running on http://localhost:8000');
+               clearTimeout(timeoutId); // Ensure timeout is cleared on error
+               
+               // Handle timeout/abort
+               if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+                   throw new Error('Upload request timed out after 20 seconds. Please check your connection and try again.');
                }
+               
+               // Handle fetch errors (network issues, CORS, etc.)
+               if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                   throw new Error('Cannot connect to backend server. Please check your internet connection and try again.');
+               }
+               
+               // Re-throw other errors (validation errors, etc.)
                throw error;
            }
        }
@@ -1146,10 +1169,13 @@
            try {
                showLoading();
                const result = await analyzeFile(file);
+               // Only show results if upload succeeded
                showResults(result);
            } catch (error) {
-               showError(error.message);
-               showUpload();
+               // Fail-safe: always exit loading state on error
+               console.error('Upload error:', error);
+               showError(error.message || 'An unexpected error occurred. Please try again.');
+               showUpload(); // Ensure we're back to upload state, not stuck on loading
            }
        }
 
