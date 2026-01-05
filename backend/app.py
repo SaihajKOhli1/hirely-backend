@@ -12,9 +12,9 @@ from pydantic import BaseModel
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from .db import get_db
-from .utils.extract_text import extract_text_from_pdf
-from .utils.scoring import score_resume_with_llm, PROMPT_VERSION
+from backend.db import get_db
+from backend.utils.extract_text import extract_text_from_pdf
+from backend.utils.scoring import score_resume_with_llm, PROMPT_VERSION
 
 app = FastAPI(
     title="Hirely API",
