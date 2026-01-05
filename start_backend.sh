@@ -3,4 +3,5 @@
 
 cd backend
 source venv/bin/activate
-uvicorn app:app --reload
+PORT=${PORT:-8080}
+uvicorn app:app --host 0.0.0.0 --port $PORT --reload

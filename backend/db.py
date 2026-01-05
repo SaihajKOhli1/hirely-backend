@@ -1,13 +1,10 @@
 """
 MongoDB connection using Motor (async MongoDB driver).
+Note: Environment variables are loaded in app.py before this module is imported.
 """
 import os
 import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 # MongoDB connection configuration
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")

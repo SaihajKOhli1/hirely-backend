@@ -7,3 +7,4 @@ dnspython==2.4.2
 certifi
 PyMuPDF==1.26.7
 python-multipart==0.0.6
+httpx>=0.24.0
