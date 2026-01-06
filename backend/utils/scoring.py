@@ -60,7 +60,17 @@ async def ollama_generate(prompt: str) -> str:
         headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
     
     # Always build enhanced_prompt and payload (works for both local and cloud)
-    enhanced_prompt = "You must return raw JSON only. Do not use markdown, backticks, or commentary.\n\n" + prompt
+    json_instructions = """CRITICAL: You must respond with ONLY valid JSON. No markdown, no code blocks, no explanations.
+- Use double quotes for all strings
+- Escape all special characters properly
+- Do not include newlines inside string values
+- Ensure all brackets and braces are properly closed
+- Return ONLY the JSON object, nothing else
+
+Your response must be valid JSON that can be parsed by json.loads() in Python.
+
+"""
+    enhanced_prompt = json_instructions + prompt
     
     payload = {
         "model": OLLAMA_MODEL,
@@ -134,7 +144,14 @@ async def groq_generate(prompt: str) -> str:
         "messages": [
             {
                 "role": "system",
-                "content": "Return raw JSON only. No markdown, no backticks, no commentary."
+                "content": """CRITICAL: You must respond with ONLY valid JSON. No markdown, no code blocks, no explanations.
+- Use double quotes for all strings
+- Escape all special characters properly
+- Do not include newlines inside string values
+- Ensure all brackets and braces are properly closed
+- Return ONLY the JSON object, nothing else
+
+Your response must be valid JSON that can be parsed by json.loads() in Python."""
             },
             {
                 "role": "user",
@@ -272,9 +289,48 @@ Requirements:
 - rewrites: Include 2-4 example bullet rewrites per section with quantifiable improvements
 - notes: Brief executive summary
 
-Return ONLY valid JSON, no other text."""
+CRITICAL: You must respond with ONLY valid JSON. No markdown, no code blocks, no explanations.
+- Use double quotes for all strings
+- Escape all special characters properly
+- Do not include newlines inside string values
+- Ensure all brackets and braces are properly closed
+- Return ONLY the JSON object, nothing else
+
+Your response must be valid JSON that can be parsed by json.loads() in Python."""
     
     return prompt
+
+
+def clean_json_response(content: str) -> str:
+    """
+    Clean LLM response to extract valid JSON.
+    
+    Args:
+        content: Raw response from LLM
+        
+    Returns:
+        str: Cleaned JSON string
+    """
+    # Strip whitespace
+    cleaned = content.strip()
+    
+    # Remove markdown code blocks (```json or ```)
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:].strip()
+    elif cleaned.startswith("```"):
+        cleaned = cleaned[3:].strip()
+    
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3].strip()
+    
+    # Remove single backticks if present
+    if cleaned.startswith("`") and cleaned.endswith("`"):
+        cleaned = cleaned[1:-1].strip()
+    
+    # Final strip
+    cleaned = cleaned.strip()
+    
+    return cleaned
 
 
 async def score_resume_with_llm(resume_text: str, company: str, role: str) -> Dict[str, Any]:
@@ -298,16 +354,7 @@ async def score_resume_with_llm(resume_text: str, company: str, role: str) -> Di
     try:
         # First attempt
         content = await llm_generate(prompt)
-        content = content.strip()
-        
-        # Remove markdown code blocks if present
-        if content.startswith("```json"):
-            content = content[7:]
-        if content.startswith("```"):
-            content = content[3:]
-        if content.endswith("```"):
-            content = content[:-3]
-        content = content.strip()
+        content = clean_json_response(content)
         
         try:
             result = json.loads(content)
@@ -353,22 +400,20 @@ Previous invalid output:
 Return ONLY valid JSON, no markdown, no code blocks, just raw JSON:"""
             
             retry_content = await llm_generate(fix_prompt)
-            retry_content = retry_content.strip()
-            if retry_content.startswith("```json"):
-                retry_content = retry_content[7:]
-            if retry_content.startswith("```"):
-                retry_content = retry_content[3:]
-            if retry_content.endswith("```"):
-                retry_content = retry_content[:-3]
-            retry_content = retry_content.strip()
+            retry_content = clean_json_response(retry_content)
             
             try:
                 result = json.loads(retry_content)
                 validated_result = validate_scoring_result(result)
                 return validated_result
-            except json.JSONDecodeError:
-                # Still invalid, return raw content for debugging
-                raise ValueError(f"Could not parse JSON after retry. Raw model output: {retry_content[:2000]}")
+            except json.JSONDecodeError as parse_error:
+                # Still invalid after retry - provide detailed error
+                error_msg = (
+                    f"Could not parse JSON after retry. "
+                    f"Parse error: {str(parse_error)}. "
+                    f"Raw model output (first 2000 chars): {retry_content[:2000]}"
+                )
+                raise ValueError(error_msg)
                 
     except ValueError:
         # Re-raise ValueError (API key errors, JSON errors)
