@@ -687,6 +687,9 @@
 
 
    <script>
+       // API Configuration
+       const API_BASE_URL = 'https://hirely-api-production.up.railway.app';
+       
        // State management
        let currentState = {
            status: 'idle',
@@ -748,79 +751,41 @@
        });
 
 
-       // Mock analysis functions
-       const ANALYSIS_DELAY = 2500;
+       // Score resume using real API
+       async function scoreResume(documentId, company, role) {
+           try {
+               showLoading(); // Show loading state
+               
+               const response = await fetch(`${API_BASE_URL}/score`, {
+                   method: 'POST',
+                   headers: {
+                       'Content-Type': 'application/json',
+                   },
+                   body: JSON.stringify({
+                       document_id: documentId,
+                       company: company,
+                       role: role
+                   })
+               });
 
-
-       const generateMockFileAnalysis = () => ({
-           overallScore: 73,
-           sections: [
-               {
-                   name: 'Professional Summary',
-                   score: 65,
-                   feedback: [
-                       'Too generic - avoid buzzwords like "dynamic" and "results-oriented"',
-                       'Add specific achievements or unique value proposition',
-                       'Quantify your experience with years and key accomplishments'
-                   ],
-                   text: 'Dynamic and results-oriented professional with extensive experience in driving business growth and optimizing operational efficiency.',
-                   strengths: ['Concise length', 'Clear focus on business impact']
-               },
-               {
-                   name: 'Work Experience',
-                   score: 88,
-                   feedback: [
-                       'Excellent use of specific metrics',
-                       'Consider adding the timeframe for this achievement'
-                   ],
-                   text: 'Led a cross-functional team of 8 engineers to deliver a customer analytics platform that increased user engagement by 34% and reduced churn by 12%.',
-                   strengths: [
-                       'Strong quantifiable results',
-                       'Clear leadership demonstration',
-                       'Specific team size mentioned'
-                   ]
-               },
-               {
-                   name: 'Skills Section',
-                   score: 58,
-                   feedback: [
-                       'List is too broad - focus on 5-7 most relevant skills for target role',
-                       'Add proficiency levels (e.g., Expert, Intermediate)',
-                       'Group related skills together for better readability'
-                   ],
-                   text: 'Python, JavaScript, React, Node.js, SQL, MongoDB, AWS, Docker, Kubernetes, Machine Learning, Data Analysis',
-                   strengths: ['Good variety of technical and analytical skills']
+               if (!response.ok) {
+                   const errorData = await response.json().catch(() => ({}));
+                   throw new Error(errorData.detail || `Scoring failed: ${response.status}`);
                }
-           ],
-           metrics: {
-               clarity: 72,
-               impact: 78,
-               professionalism: 69
-           }
-       });
 
-
-       const generateMockTextAnalysis = (text) => ({
-           overallScore: 81,
-           sections: [
-               {
-                   name: 'Overall Content',
-                   score: 81,
-                   feedback: [
-                       'Strong personal voice - good authenticity',
-                       'Consider breaking into distinct sections',
-                       'Add more quantifiable achievements'
-                   ],
-                   text: text.substring(0, 200) + '...',
-                   strengths: ['Authentic voice', 'Clear communication style']
-               }
-           ],
-           metrics: {
-               clarity: 84,
-               impact: 76,
-               professionalism: 83
+               const scoreData = await response.json();
+               
+               // Display the REAL results instead of mock data
+               displayResults(scoreData);
+               
+           } catch (error) {
+               console.error('Scoring error:', error);
+               showError(error.message || 'Failed to analyze resume. Please try again.');
+               showUpload(); // Return to upload state on error
+           } finally {
+               // Loading state is managed by displayResults/showError
            }
-       });
+       }
 
 
        // Analysis functions
@@ -852,7 +817,7 @@
            const timeoutId = setTimeout(() => abortController.abort(), 20000); // 20 second timeout
 
            try {
-               const response = await fetch('https://hirely-api-production.up.railway.app/upload', {
+               const response = await fetch(`${API_BASE_URL}/upload`, {
                    method: 'POST',
                    body: formData,
                    signal: abortController.signal
@@ -876,9 +841,12 @@
                // Show success message
                showSuccessMessage(`Resume uploaded successfully! Document ID: ${result.document_id ? result.document_id.substring(0, 8) + '...' : 'N/A'}`);
                
-               // Still show mock analysis for now (can be replaced with real analysis later)
-               await new Promise(resolve => setTimeout(resolve, 1000));
-               return generateMockFileAnalysis();
+               // Now score the resume with the AI
+               const selectedCompany = currentState.selectedCompany || 'General';
+               await scoreResume(result.document_id, selectedCompany, 'Software Engineer');
+               
+               // Return null since scoreResume will handle displaying results
+               return null;
                
            } catch (error) {
                clearTimeout(timeoutId); // Ensure timeout is cleared on error
@@ -904,14 +872,12 @@
                throw new Error('Text input cannot be empty.');
            }
 
-
            if (text.length < 50) {
                throw new Error('Text input is too short. Please provide at least 50 characters.');
            }
 
-
-           await new Promise(resolve => setTimeout(resolve, ANALYSIS_DELAY));
-           return generateMockTextAnalysis(text);
+           // Text paste analysis not yet implemented - would need backend support
+           throw new Error('Text paste analysis is not yet available. Please upload a PDF file.');
        }
 
 
@@ -974,7 +940,41 @@
        }
 
 
-       function showResults(result) {
+       // Transform API response to display format
+       function transformApiResponse(apiData) {
+           // API returns: overall_score, metrics, section_feedback, strengths, top_fixes, missing_keywords, notes
+           // Transform to: overallScore, metrics, sections
+           
+           const sections = (apiData.section_feedback || []).map(section => ({
+               name: section.section || 'Section',
+               score: section.score || 0,
+               feedback: section.feedback || [],
+               text: section.rewrites && section.rewrites.length > 0 
+                   ? section.rewrites[0].original || 'No content available'
+                   : 'No content available',
+               strengths: apiData.strengths || []
+           }));
+           
+           return {
+               overallScore: apiData.overall_score || 0,
+               metrics: {
+                   clarity: apiData.metrics?.clarity || 0,
+                   impact: apiData.metrics?.impact || 0,
+                   professionalism: apiData.metrics?.professionalism || 0,
+                   role_fit: apiData.metrics?.role_fit || 0,
+                   ats: apiData.metrics?.ats || 0
+               },
+               sections: sections,
+               missing_keywords: apiData.missing_keywords || [],
+               top_fixes: apiData.top_fixes || [],
+               notes: apiData.notes || ''
+           };
+       }
+
+       function displayResults(apiData) {
+           // Transform API response to display format
+           const result = transformApiResponse(apiData);
+           
            currentState.result = result;
            document.getElementById('uploadSection').classList.add('hidden');
            document.getElementById('loadingSection').classList.add('hidden');
@@ -1169,8 +1169,12 @@
            try {
                showLoading();
                const result = await analyzeFile(file);
-               // Only show results if upload succeeded
-               showResults(result);
+               // analyzeFile now calls scoreResume internally, which handles displaying results
+               // If result is null, scoreResume is handling the display
+               if (result) {
+                   // Fallback: if scoreResume didn't handle it, show results
+                   displayResults(result);
+               }
            } catch (error) {
                // Fail-safe: always exit loading state on error
                console.error('Upload error:', error);
@@ -1188,7 +1192,11 @@
            try {
                showLoading();
                const result = await analyzeText(text);
-               showResults(result);
+               // analyzeText now throws error for text paste (not yet implemented)
+               // This code path shouldn't be reached, but kept for safety
+               if (result) {
+                   displayResults(result);
+               }
            } catch (error) {
                showError(error.message);
                showUpload();
