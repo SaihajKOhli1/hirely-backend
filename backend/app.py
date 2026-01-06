@@ -1,6 +1,11 @@
 """
 FastAPI backend application.
 """
+import sys
+from pathlib import Path
+# Add parent directory to path so 'backend' module can be imported
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 # Load environment variables FIRST, before any other imports that use them
 from dotenv import load_dotenv
 load_dotenv()
